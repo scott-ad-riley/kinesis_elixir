@@ -6,3 +6,4 @@ Playing around with Kinesis streams attempting to use GenStage to manage shards 
 
 1. `mix deps.get`
 2. Setup your aws credentials in environment via `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+3. Add your stream name to `KINESIS_STREAM_NAME` env var
