@@ -43,6 +43,12 @@ defmodule KinesisElixir.StreamSupervisor do
     Supervisor.which_children(__MODULE__)
   end
 
+  def get_all_records do
+    for {_, iterator_pid, _, _} <- kids() do
+      GenServer.call(iterator_pid, :get_records)
+    end
+  end
+
   def get_stream() do
     ExAws.Kinesis.describe_stream(@stream_name) |> ExAws.request!
   end
