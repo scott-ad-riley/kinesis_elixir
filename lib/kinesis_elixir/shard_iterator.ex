@@ -36,7 +36,7 @@ defmodule KinesisElixir.ShardIterator do
   end
 
   def handle_demand(demand, {shard_id, iterator, buffered_demand}) do
-    IO.puts "Demand received with some buffered_demand"
+    IO.puts "Demand received #{demand} with some buffered_demand"
     {:noreply, [], {shard_id, iterator, demand + buffered_demand}}
   end
 
