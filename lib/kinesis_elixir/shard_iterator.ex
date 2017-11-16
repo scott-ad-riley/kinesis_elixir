@@ -28,11 +28,10 @@ defmodule KinesisElixir.ShardIterator do
 
   def handle_demand(demand, {shard_id, iterator, 0}) do
     IO.puts "Demand received #{demand} with no buffered_demand"
-    {records, next_iterator} = get_records(iterator, demand, shard_id)
-    record_count = Enum.count(records)
 
-    if record_count < demand, do: GenStage.cast(self(), :check_for_new_records)
-    {:noreply, records, {shard_id, next_iterator, demand - record_count}}
+    {records, next_iterator, new_total_demand} = fetch_new_records(iterator, demand, shard_id)
+
+    {:noreply, records, {shard_id, next_iterator, new_total_demand}}
   end
 
   def handle_demand(demand, {shard_id, iterator, buffered_demand}) do
@@ -45,12 +44,17 @@ defmodule KinesisElixir.ShardIterator do
   def handle_cast(:check_for_new_records, {shard_id, iterator, buffered_demand}) do
     Process.sleep(200) # Kinesis throws a ProvisionedThroughputExceededException if we request more than 5 times a second per shard
 
-    {records, next_iterator} = get_records(iterator, buffered_demand, shard_id)
+    {records, next_iterator, new_total_demand} = fetch_new_records(iterator, buffered_demand, shard_id)
+
+    {:noreply, records, {shard_id, next_iterator, new_total_demand}}
+  end
+
+  defp fetch_new_records(iterator, requested, shard_id) do
+    {records, next_iterator} = get_records(iterator, requested, shard_id)
     record_count = Enum.count(records)
 
-    if record_count < buffered_demand, do: GenStage.cast(self(), :check_for_new_records)
-
-    {:noreply, records, {shard_id, next_iterator, buffered_demand - Enum.count(records)}}
+    if record_count < requested, do: GenStage.cast(self(), :check_for_new_records)
+    {records, next_iterator, requested - record_count}
   end
 
   def get_records(iterator, count, shard_id) do
