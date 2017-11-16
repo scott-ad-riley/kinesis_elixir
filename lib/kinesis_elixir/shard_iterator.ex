@@ -8,7 +8,7 @@ defmodule KinesisElixir.ShardIterator do
     GenStage.start_link(__MODULE__, shard_id, name: name(shard_id))
   end
 
-  def name(shard_id) do
+  defp name(shard_id) do
     {:global, shard_id}
   end
 
@@ -16,13 +16,13 @@ defmodule KinesisElixir.ShardIterator do
     {:producer, {shard_id, get_iterator(shard_id), 0}}
   end
 
-  def get_iterator(shard_id) do
+  defp get_iterator(shard_id) do
     ExAws.Kinesis.get_shard_iterator(@stream_name, shard_id, :latest)
     |> ExAws.request!
     |> match_iterator
   end
 
-  def match_iterator(%{"ShardIterator" => iterator}), do: iterator
+  defp match_iterator(%{"ShardIterator" => iterator}), do: iterator
 
   # Server Callbacks
 
@@ -57,15 +57,15 @@ defmodule KinesisElixir.ShardIterator do
     {records, next_iterator, requested - record_count}
   end
 
-  def get_records(iterator, count, shard_id) do
+  defp get_records(iterator, count, shard_id) do
     ExAws.Kinesis.get_records(iterator, limit: count) |> ExAws.request |> extract_info(shard_id)
   end
 
-  def extract_info({:ok, %{"Records" => records, "NextShardIterator" => next_iterator}}, _shard_id) do
+  defp extract_info({:ok, %{"Records" => records, "NextShardIterator" => next_iterator}}, _shard_id) do
     {records, next_iterator}
   end
 
-  def extract_info({:error, {:http_error, 400, %{"__type" => "ExpiredIteratorException"}}}, shard_id) do
+  defp extract_info({:error, {:http_error, 400, %{"__type" => "ExpiredIteratorException"}}}, shard_id) do
     {[], get_iterator(shard_id)}
   end
 end

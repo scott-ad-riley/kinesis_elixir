@@ -17,7 +17,7 @@ defmodule KinesisElixir.StreamSupervisor do
     |> extract_shards()
   end
 
-  def map_to_child_specs(shards) do
+  defp map_to_child_specs(shards) do
     shards
     |> Enum.reduce([],
         fn shard, acc_list ->
@@ -35,7 +35,7 @@ defmodule KinesisElixir.StreamSupervisor do
     )
   end
 
-  def iterator_process_name(list) do
+  defp iterator_process_name(list) do
     String.to_atom("iterator_" <> Integer.to_string(length(list)))
   end
 
@@ -43,17 +43,17 @@ defmodule KinesisElixir.StreamSupervisor do
     Supervisor.which_children(__MODULE__)
   end
 
-  def get_all_records do
+  defp get_all_records do
     for {_, iterator_pid, _, _} <- kids() do
       GenServer.call(iterator_pid, :get_records)
     end
   end
 
-  def get_stream() do
+  defp get_stream() do
     ExAws.Kinesis.describe_stream(@stream_name) |> ExAws.request!
   end
 
-  def extract_shards(%{"StreamDescription" => %{ "Shards" => shards}}) do
+  defp extract_shards(%{"StreamDescription" => %{ "Shards" => shards}}) do
     shards
   end
 end
